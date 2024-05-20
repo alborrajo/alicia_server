@@ -1,10 +1,18 @@
 #include <array>
 #include <cassert>
 #include <unordered_map>
+#include <vector>
 
 #include <boost/asio.hpp>
 
+#include "commands.hpp"
+
 namespace alicia {
+
+  enum MessageType {
+    Serverbound, // Client to server
+    Clientbound  // Server to client
+  };
 
   /**
    * Encode message information.
@@ -16,12 +24,12 @@ namespace alicia {
    * @return Encoded message information.
    */
   uint32_t encode_message_information(
-      uint16_t message_id, uint16_t message_jumbo, uint16_t message_data_length, uint16_t buffer_size = 4092)
+      uint16_t message_id, uint16_t message_jumbo, uint16_t message_data_length, uint16_t buffer_size = 0xFFC)
   {
     uint32_t length = buffer_size << 16 | message_data_length;
     uint32_t val = length;
-    length = length & 16383 | length << 14;
-    const uint16_t magic = (length & 15 | 65408) << 8 | val >> 4 & 255 | length & 61440;
+    length = length & 0x3FFF | length << 14;
+    const uint16_t magic = (length & 15 | 0xFF80) << 8 | val >> 4 & 0xFF | length & 0xF000;
 
     message_id = message_jumbo & 0xFFFF | message_id & 0xFFFF;
     uint32_t encoded = magic;
@@ -35,13 +43,48 @@ namespace alicia {
    * @param data Message information to decode.
    * @return Decoded message length.
    */
-  uint32_t decode_message_length(uint32_t data)
+  bool decode_message_information(uint32_t data, uint16_t *out_message_id, uint16_t *out_message_data_length)
   {
     if(data & (1 << 15)) {
-      const uint16_t section = data & 16383;
-      return (data & 255) << 4 | section >> 8 & 15 | section & 61440;
+      const uint16_t section = data & 0x3FF;
+      if(out_message_data_length != nullptr)
+      {
+        *out_message_data_length = (data & 255) << 4 | section >> 8 & 15 | section & 61440;
+      }
+
+      const uint16_t *uintArray = (uint16_t*)(&data);
+      const uint16_t firstTwoBytes = uintArray[0];
+      const uint16_t secondTwoBytes = uintArray[1];
+      const uint16_t xorResult = firstTwoBytes^secondTwoBytes;
+      if(out_message_id != nullptr)
+      {
+        *out_message_id = ~(xorResult & 0xC000) & xorResult;
+      }
+      return true;
     }
-    return data;
+    return false;
+  }
+
+  void log_message(boost::asio::ip::tcp::socket &socket, MessageType message_type, const std::vector<std::byte>& message)
+  {
+    const uint32_t encoded = *reinterpret_cast<const uint32_t*>(message.data());
+    uint16_t decoded_message_id, decoded_message_length;
+    alicia::decode_message_information(encoded, &decoded_message_id, &decoded_message_length);
+    printf("Received %s (ID %d) from %s:%u (Length %u. %uB in total).", GetCommandName(decoded_message_id).c_str(), decoded_message_id, socket.remote_endpoint().address().to_string().c_str(), socket.remote_endpoint().port(), decoded_message_length, message.size());
+    int column = 0;
+    for (int i = 4; i < message.size(); ++i) {
+      switch((i-4)%16)
+      {
+        case 0:
+          printf("\n\t");
+          break;
+        case 8:
+          printf(" ");
+          break;
+      }
+      printf(" %02X", message[i]);
+    }
+    printf("\n");
   }
 
 } // namespace alicia
@@ -55,7 +98,8 @@ void test_magic()
   assert(encoded_message_length == 0x8D06CD01);
 
   // Test decoding of message length from message information.
-  const auto decoded_message_length = alicia::decode_message_length(encoded_message_length);
+  uint16_t decoded_message_length = 0;
+  alicia::decode_message_information(encoded_message_length, nullptr, &decoded_message_length);
   assert(decoded_message_length == message_length);
 }
 
@@ -80,24 +124,23 @@ namespace alicia::protocol
             if (error)
             {
               printf(
-                "Error occurred on read loop with client on port %d. What: %s\n",
+                "Error occurred on read loop with client %s:%d. What: %s\n",
+                 _socket.remote_endpoint().address().to_string().c_str(), 
                  _socket.remote_endpoint().port(),
                  error.message().c_str());
               return;
             }
-            printf("Read some data (%lld bytes) from client on port %d.\n", size, _socket.remote_endpoint().port());
-            printf("\t");
-            for (int i = 0; i < size; ++i) {
-              printf("%X ", _buffer[i]);
-            }
-            printf("\n");
+
+            log_message(_socket, Serverbound, std::vector<std::byte>(_buffer.begin(), _buffer.begin()+size));
+
 
             // Respond with AcCmdCLLoginCancel with response code
             // CR_INVALID_VERSION
-            std::array<std::byte, 5> test;
-            *reinterpret_cast<uint32_t*>(test.data()) = encode_message_information(9, 16384, 5);
-            test[4] = static_cast<std::byte>(3);
-            _socket.write_some(boost::asio::const_buffer(test.data(), 5));
+            std::array<std::byte, 5> response;
+            *reinterpret_cast<uint32_t*>(response.data()) = encode_message_information(9, 16384, 5);
+            response[4] = static_cast<std::byte>(3);
+            _socket.write_some(boost::asio::const_buffer(response.data(), 5));
+            log_message(_socket, Clientbound, std::vector<std::byte>(response.begin(), response.end()));
 
             read_loop();
           });
