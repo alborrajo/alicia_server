@@ -41,10 +41,10 @@ public:
     {
       Disconnected,
       NotReady,
-      Ready,
+      Waiting,
       Loading,
       Racing,
-      Finished,
+      Finishing,
     };
 
     enum class Team

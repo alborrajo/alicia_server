@@ -962,6 +962,7 @@ struct AcCmdRCRaceResultNotify
     AcCmdCRStartRaceNotify::Struct2 achievements{};
     enum Bitset : uint32_t
     {
+      TimeOver = 1 << 6,
       Connected = 1 << 7,
       HasLevelUpBonus = 1 << 8,
       PcBang = 1 << 10,

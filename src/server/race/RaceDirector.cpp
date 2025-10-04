@@ -424,7 +424,7 @@ void RaceDirector::Tick() {
       std::views::values(roomInstance.tracker.GetRacers()),
       [](const tracker::RaceTracker::Racer& racer)
       {
-        return racer.state == tracker::RaceTracker::Racer::State::Finished;
+        return racer.state == tracker::RaceTracker::Racer::State::Finishing;
       });
 
     const bool raceTimeoutReached = std::chrono::steady_clock::now() >= roomInstance.stageTimeoutTimePoint;
@@ -437,14 +437,16 @@ void RaceDirector::Tick() {
     roomInstance.stage = RoomInstance::Stage::Waiting;
 
     // Build the score board.
-    for (const auto& [characterUid, racer] : roomInstance.tracker.GetRacers())
+    for (auto& [characterUid, racer] : roomInstance.tracker.GetRacers())
     {
       auto& score = raceResult.scores.emplace_back();
+
+      racer.state = tracker::RaceTracker::Racer::State::NotReady;
 
       // todo: figure out the other bit set values
 
       if (racer.state != tracker::RaceTracker::Racer::State::Disconnected)
-        score.bitset = protocol::AcCmdRCRaceResultNotify::ScoreInfo::Connected;
+        score.bitset = protocol::AcCmdRCRaceResultNotify::ScoreInfo::HasLevelUpBonus;
 
       score.courseTime = racer.courseTime;
 
@@ -573,7 +575,7 @@ void RaceDirector::HandleEnterRoom(
   {
     auto& protocolRacer = response.racers.emplace_back();
 
-    protocolRacer.isReady = racer.state == tracker::RaceTracker::Racer::State::Ready;
+    protocolRacer.isReady = racer.state == tracker::RaceTracker::Racer::State::Waiting;
 
     const auto characterRecord = GetServerInstance().GetDataDirector().GetCharacter(
       characterUid);
@@ -588,6 +590,7 @@ void RaceDirector::HandleEnterRoom(
         protocolRacer.oid = racer.oid;
         protocolRacer.uid = character.uid();
         protocolRacer.name = character.name();
+        protocolRacer.isReady = racer.state == tracker::RaceTracker::Racer::State::Waiting;
         protocolRacer.isHidden = false;
         protocolRacer.isNPC = false;
 
@@ -751,6 +754,9 @@ void RaceDirector::HandleLeaveRoom(ClientId clientId)
   protocol::AcCmdCRLeaveRoomOK response{};
 
   auto& clientContext = _clients[clientId];
+  if (clientContext.roomUid == 0)
+    return;
+
   auto& roomInstance = _roomInstances[clientContext.roomUid];
 
   _serverInstance.GetDataDirector().GetCharacter(clientContext.characterUid).Immutable(
@@ -847,13 +853,13 @@ void RaceDirector::HandleReadyRace(
 
   // Toggle the ready state.
   if (racer.state == tracker::RaceTracker::Racer::State::NotReady)
-    racer.state = tracker::RaceTracker::Racer::State::Ready;
-  else if (racer.state == tracker::RaceTracker::Racer::State::Ready)
+    racer.state = tracker::RaceTracker::Racer::State::Waiting;
+  else if (racer.state == tracker::RaceTracker::Racer::State::Waiting)
     racer.state = tracker::RaceTracker::Racer::State::NotReady;
 
   protocol::AcCmdCRReadyRaceNotify response{
     .characterUid = clientContext.characterUid,
-    .isReady = racer.state == tracker::RaceTracker::Racer::State::Ready};
+    .isReady = racer.state == tracker::RaceTracker::Racer::State::Waiting};
 
   for (const ClientId& roomClientId : roomInstance.clients)
   {
@@ -1048,7 +1054,7 @@ void RaceDirector::HandleUserRaceFinal(
   auto& racer = roomInstance.tracker.GetRacer(
     clientContext.characterUid);
 
-  racer.state = tracker::RaceTracker::Racer::State::Finished;
+  racer.state = tracker::RaceTracker::Racer::State::Finishing;
   racer.courseTime = command.courseTime;
 
   protocol::AcCmdUserRaceFinalNotify notify{
