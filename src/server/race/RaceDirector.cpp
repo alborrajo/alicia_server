@@ -446,7 +446,10 @@ void RaceDirector::Tick() {
       // todo: figure out the other bit set values
 
       if (racer.state != tracker::RaceTracker::Racer::State::Disconnected)
-        score.bitset = protocol::AcCmdRCRaceResultNotify::ScoreInfo::HasLevelUpBonus;
+      {
+        score.bitset = static_cast<protocol::AcCmdRCRaceResultNotify::ScoreInfo::Bitset>(
+            protocol::AcCmdRCRaceResultNotify::ScoreInfo::Bitset::Connected | 0b1'1111);
+      }
 
       score.courseTime = racer.courseTime;
 
