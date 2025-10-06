@@ -443,12 +443,13 @@ void LobbyDirector::HandleRoomList(
     // TODO: get Live player count from RaceDirector
     // TODO: gamestate showing
     auto& roomResponse = response.rooms.emplace_back();
+    roomResponse.hasStarted = _serverInstance.GetRaceDirector().IsRoomRacing(room.uid);
     roomResponse.id = room.uid;
     if (room.password.empty())
       roomResponse.isLocked = false;
     else
       roomResponse.isLocked = true;
-    roomResponse.playerCount = 1; // Placeholder, replace with actual live count
+    roomResponse.playerCount = _serverInstance.GetRaceDirector().GetRoomPlayerCount(room.uid); // Placeholder, replace with actual live count
     roomResponse.maxPlayers = room.playerCount;
     roomResponse.level = 2;
     roomResponse.name = room.name;
