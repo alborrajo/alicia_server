@@ -445,10 +445,12 @@ void LobbyDirector::HandleRoomList(
     auto& roomResponse = response.rooms.emplace_back();
     roomResponse.hasStarted = _serverInstance.GetRaceDirector().IsRoomRacing(room.uid);
     roomResponse.id = room.uid;
-    if (room.password.empty())
-      roomResponse.isLocked = false;
-    else
+    if (not room.password.empty()
+      || roomResponse.hasStarted)
+    {
       roomResponse.isLocked = true;
+    }
+
     roomResponse.playerCount = _serverInstance.GetRaceDirector().GetRoomPlayerCount(room.uid); // Placeholder, replace with actual live count
     roomResponse.maxPlayers = room.playerCount;
     roomResponse.level = 2;
@@ -500,9 +502,11 @@ void LobbyDirector::HandleEnterRoom(
   const protocol::LobbyCommandEnterRoom& command)
 {
   const auto& room = _serverInstance.GetRoomSystem().GetRoom(command.roomUid);
+
   // TODO: add more error handling
   // add the errorcodes to the protocol as enums
-  if (room.password != command.password)
+  if (room.password.empty()
+    || room.password != command.password)
   {
     protocol::LobbyCommandEnterRoomCancel response{
       .status = protocol::LobbyCommandEnterRoomCancel::Status::CR_BAD_PASSWORD};
@@ -515,6 +519,7 @@ void LobbyDirector::HandleEnterRoom(
       });
     return;
   }
+
   protocol::LobbyCommandEnterRoomOK response{
     .roomUid = command.roomUid,
     .otp = 0xBAAD,
