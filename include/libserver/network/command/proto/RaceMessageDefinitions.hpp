@@ -522,21 +522,23 @@ struct AcCmdCRStartRaceNotify
   uint16_t raceMissionId{};
   uint8_t unk12{};
 
-  struct Struct3
+  struct ActiveSkillSet
   {
-    uint8_t unk0{};
+    //! Skill set ID
+    uint8_t setId{};
+    //! Unused TODO: confirm this
     uint32_t unk1{};
-    // List size specified with a byte. Max size 3
-    std::vector<uint16_t> unk2{};
+    //! Skills (including bonus). Max 3 skills
+    std::array<uint32_t, 3> skills{};
 
     static void Write(
-      const Struct3& command,
+      const ActiveSkillSet& command,
       SinkStream& stream);
 
     static void Read(
-      Struct3& command,
+      ActiveSkillSet& command,
       SourceStream& stream);
-  } unk13{};
+  } racerActiveSkillSet{};
 
   uint8_t unk14{};
   //! Carnival (FestivalMissionInfo)
@@ -984,7 +986,7 @@ struct AcCmdRCRaceResultNotify
 
   //! Max 16 entries, short as size
   std::vector<ScoreInfo> scores{};
-  AcCmdCRStartRaceNotify::Struct3 member2{};
+  AcCmdCRStartRaceNotify::ActiveSkillSet racerActiveSkillSet{};
 
   uint32_t member3{};
   uint32_t member4{};
@@ -2199,6 +2201,33 @@ struct AcCmdRCAddSkillEffect
   //! @param stream Source stream.
   static void Read(
     AcCmdRCAddSkillEffect& command,
+    SourceStream& stream);
+};
+
+struct AcCmdCRChangeSkillCardPresetID
+{
+  uint8_t setId{};
+  //! Command gives this as u32, we cast it from u32 to GameMode in Read
+  //! Could very possibly means tabId which would loosely correlate to GameMode
+  GameMode gamemode{};
+
+  static Command GetCommand()
+  {
+    return Command::AcCmdCRChangeSkillCardPresetID;
+  }
+
+  //! Writes the command to a provided sink stream.
+  //! @param command Command.
+  //! @param stream Sink stream.
+  static void Write(
+    const AcCmdCRChangeSkillCardPresetID& command,
+    SinkStream& stream);
+
+  //! Reader a command from a provided source stream.
+  //! @param command Command.
+  //! @param stream Source stream.
+  static void Read(
+    AcCmdCRChangeSkillCardPresetID& command,
     SourceStream& stream);
 };
 
