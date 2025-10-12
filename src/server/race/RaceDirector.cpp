@@ -362,6 +362,14 @@ void RaceDirector::Tick() {
       spdlog::warn("Room {} has reached the loading timeout threshold", raceUid);
     }
 
+    for (auto& racer : raceInstance.tracker.GetRacers() | std::views::values)
+    {
+      // todo: handle the players that did not load in to the race.
+      // for now just consider them disconnected
+      if (racer.state != tracker::RaceTracker::Racer::State::Racing)
+        racer.state = tracker::RaceTracker::Racer::State::Disconnected;
+    }
+
     const auto mapBlockTemplate = _serverInstance.GetCourseRegistry().GetMapBlockInfo(
       raceInstance.raceMapBlockId);
 
