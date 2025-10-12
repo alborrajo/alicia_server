@@ -162,7 +162,8 @@ void GamepadOptions::Read(GamepadOptions& value, SourceStream& stream)
 
 void Settings::Write(const Settings& value, SinkStream& stream)
 {
-  stream.Write(value.typeBitset.to_ulong());
+  uint32_t typeValue{value.typeBitset.to_ulong()};
+  stream.Write(typeValue);
 
   // Write the keyboard options if specified in the option type mask.
   if (value.typeBitset.test(Type::Keyboard))
