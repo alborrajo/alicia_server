@@ -765,6 +765,28 @@ void RaceDirector::HandleEnterRoom(
           {
             protocol::BuildProtocolHorse(protocolRacer.avatar->mount, mount);
           });
+
+        if (character.guildUid() != data::InvalidUid)
+        {
+          GetServerInstance().GetDataDirector().GetGuild(character.guildUid()).Immutable(
+            [&protocolRacer, characterUid = character.uid()](const data::Guild& guild)
+            {
+              protocol::BuildProtocolGuild(protocolRacer.guild, guild);
+              
+              if (guild.owner() == characterUid)
+              {
+                protocolRacer.guild.guildRole = protocol::GuildRole::Owner;
+              }
+              else if (std::ranges::contains(guild.officers(), characterUid))
+              {
+                protocolRacer.guild.guildRole = protocol::GuildRole::Officer;
+              }
+              else
+              {
+                protocolRacer.guild.guildRole = protocol::GuildRole::Member;
+              }
+            });
+        }
       });
 
     if (characterUid == clientContext.characterUid)
