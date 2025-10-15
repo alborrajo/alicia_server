@@ -1371,10 +1371,7 @@ void LobbyNetworkHandler::HandleUpdateUserSettings(
     // Copy the keyboard bindings if present in the command.
     if (command.settings.typeBitset.test(protocol::Settings::Keyboard))
     {
-      if (not settings.keyboardBindings())
-        settings.keyboardBindings().emplace();
-      else
-        settings.keyboardBindings()->clear();
+      settings.keyboardBindings().emplace();
 
       for (const auto& protocolBinding : command.settings.keyboardOptions.bindings)
       {
@@ -1389,10 +1386,7 @@ void LobbyNetworkHandler::HandleUpdateUserSettings(
     // Copy the gamepad bindings if present in the command.
     if (command.settings.typeBitset.test(protocol::Settings::Gamepad))
     {
-      if (not settings.gamepadBindings())
-        settings.gamepadBindings().emplace();
-      else
-        settings.gamepadBindings()->clear();
+      settings.gamepadBindings().emplace();
 
       auto protocolBindings = command.settings.gamepadOptions.bindings;
 
