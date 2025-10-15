@@ -1373,6 +1373,8 @@ void LobbyNetworkHandler::HandleUpdateUserSettings(
     {
       if (not settings.keyboardBindings())
         settings.keyboardBindings().emplace();
+      else
+        settings.keyboardBindings()->clear();
 
       for (const auto& protocolBinding : command.settings.keyboardOptions.bindings)
       {
@@ -1389,6 +1391,8 @@ void LobbyNetworkHandler::HandleUpdateUserSettings(
     {
       if (not settings.gamepadBindings())
         settings.gamepadBindings().emplace();
+      else
+        settings.gamepadBindings()->clear();
 
       auto protocolBindings = command.settings.gamepadOptions.bindings;
 

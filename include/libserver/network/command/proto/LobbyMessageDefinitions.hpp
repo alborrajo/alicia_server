@@ -109,6 +109,7 @@ struct LobbyCommandLoginOK
     };
     std::vector<Progress> progress{};
   };
+
   //! Max 17
   std::vector<Mission> missions{};
 
