@@ -211,6 +211,8 @@ void LobbyDirector::QueueUserLogin(
   const std::string& userName,
   const std::string& userToken)
 {
+  spdlog::info("User '{}' logging in", userName);
+
   const auto [iter, inserted] = _userLogins.try_emplace(userName);
   if (not inserted)
   {
@@ -243,6 +245,8 @@ void LobbyDirector::QueueUserLogout(const std::string& userName)
 {
   _userInstances.erase(userName);
   _userLogins.erase(userName);
+
+  spdlog::info("User '{}' logging out", userName);
   // todo: was last member of a guild online?
 }
 

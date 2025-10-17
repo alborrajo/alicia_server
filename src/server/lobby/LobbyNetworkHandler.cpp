@@ -1106,7 +1106,12 @@ void LobbyNetworkHandler::HandleEnterRoom(
     return;
   }
 
-  auto& userInstance = _serverInstance.GetLobbyDirector().GetUsers()[clientContext.userName];
+  auto& users =  _serverInstance.GetLobbyDirector().GetUsers();
+  const auto userIter = users.find(clientContext.userName);
+  if (userIter == users.cend())
+    throw std::runtime_error("User instance does not exist");
+
+  auto& userInstance = userIter->second;
   userInstance.roomUid = command.roomUid;
 
   size_t identityHash = std::hash<uint32_t>()(clientContext.characterUid);
