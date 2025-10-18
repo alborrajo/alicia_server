@@ -250,6 +250,15 @@ void LobbyDirector::QueueUserLogout(const std::string& userName)
   // todo: was last member of a guild online?
 }
 
+void LobbyDirector::SetUserRoom(const std::string& userName, data::Uid roomUid)
+{
+  const auto userIter = _userInstances.find(userName);
+  if (userIter == _userInstances.cend())
+    return;
+
+  userIter->second.roomUid = roomUid;
+}
+
 void LobbyDirector::SetCharacterForcedIntoCreator(
   const data::Uid characterUid,
   const bool forced)

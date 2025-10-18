@@ -89,6 +89,8 @@ public:
   void QueueUserLogout(
     const std::string& userName);
 
+  void SetUserRoom(const std::string& userName, data::Uid roomUid);
+
   void SetCharacterForcedIntoCreator(
     data::Uid characterUid,
     bool forced);

@@ -61,9 +61,9 @@ LobbyNetworkHandler::LobbyNetworkHandler(
     });
 
   _commandServer.RegisterCommandHandler<protocol::AcCmdCLLeaveRoom>(
-    [this](const ClientId clientId, const auto& command)
+    [this](const ClientId clientId, [[maybe_unused]] const auto& command)
     {
-      HandleLeaveRoom(clientId, command);
+      HandleLeaveRoom(clientId);
     });
 
   _commandServer.RegisterCommandHandler<protocol::AcCmdCLEnterChannel>(
@@ -1106,14 +1106,6 @@ void LobbyNetworkHandler::HandleEnterRoom(
     return;
   }
 
-  auto& users =  _serverInstance.GetLobbyDirector().GetUsers();
-  const auto userIter = users.find(clientContext.userName);
-  if (userIter == users.cend())
-    throw std::runtime_error("User instance does not exist");
-
-  auto& userInstance = userIter->second;
-  userInstance.roomUid = command.roomUid;
-
   size_t identityHash = std::hash<uint32_t>()(clientContext.characterUid);
   boost::hash_combine(identityHash, command.roomUid);
 
@@ -1135,43 +1127,39 @@ void LobbyNetworkHandler::HandleEnterRoom(
       return response;
     });
 
-  // Schedule removal of the player from the room queue.
   _serverInstance.GetLobbyDirector().GetScheduler().Queue(
-    [this, roomUid = command.roomUid, characterUid = clientContext.characterUid]()
+    [this, userName = clientContext.userName, characterUid = clientContext.characterUid, roomUid = command.roomUid]()
     {
-      try
+      bool hasEnteredRaceRoom = false;
+
+      if (_serverInstance.GetRoomSystem().RoomExists(roomUid))
       {
         _serverInstance.GetRoomSystem().GetRoom(
           roomUid,
-          [this, characterUid](Room& room)
+          [&hasEnteredRaceRoom, characterUid](Room& room)
           {
-            const bool dequeued = room.DequeuePlayer(characterUid);
+            const bool playerDequeued = room.DequeuePlayer(characterUid);
 
-            if (not dequeued)
-              return;
-
-            // If the player was actually dequeued it means
-            // they have never connected to the room.
-            _serverInstance.GetDataDirector().GetCharacter(characterUid).Immutable(
-              [](const data::Character& character)
-              {
-                  spdlog::warn("Player '{}' did not connect to the room before the timeout", character.name());
-              });
+            // If the player was dequeued that means they did not enter the room.
+            hasEnteredRaceRoom = not playerDequeued;
           });
       }
-      catch (const std::exception&)
-      {
-        // We really don't care.
-      }
+
+      if (hasEnteredRaceRoom)
+        _serverInstance.GetLobbyDirector().SetUserRoom(userName, roomUid);
     },
     Scheduler::Clock::now() + std::chrono::seconds(7));
 }
 
 void LobbyNetworkHandler::HandleLeaveRoom(
-  const ClientId clientId,
-  const protocol::AcCmdCLLeaveRoom& command)
+  const ClientId clientId)
 {
-  spdlog::error("Not implemented - client {} left a room", clientId);
+  const auto& clientContext = GetClientContext(clientId);
+  _serverInstance.GetLobbyDirector().GetScheduler().Queue(
+    [this, userName = clientContext.userName]()
+    {
+      _serverInstance.GetLobbyDirector().SetUserRoom(userName, 0);
+    });
 }
 
 void LobbyNetworkHandler::HandleEnterChannel(

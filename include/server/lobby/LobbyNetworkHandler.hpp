@@ -111,8 +111,7 @@ private:
     const protocol::AcCmdCLEnterRoom& command);
 
   void HandleLeaveRoom(
-    ClientId clientId,
-    const protocol::AcCmdCLLeaveRoom& command);
+    ClientId clientId);
 
   void HandleEnterChannel(
     ClientId clientId,
