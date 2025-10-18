@@ -495,6 +495,7 @@ LobbyNetworkHandler::ClientContext& LobbyNetworkHandler::GetClientContext(
 void LobbyNetworkHandler::HandleClientConnected(ClientId clientId)
 {
   _clients.try_emplace(clientId);
+  spdlog::debug("Client {} connected to the lobby server", clientId);
 }
 
 void LobbyNetworkHandler::HandleClientDisconnected(ClientId clientId)
@@ -515,6 +516,7 @@ void LobbyNetworkHandler::HandleClientDisconnected(ClientId clientId)
   }
 
   _clients.erase(clientId);
+  spdlog::debug("Client {} disconnected from the lobby server", clientId);
 }
 
 void LobbyNetworkHandler::HandleLogin(

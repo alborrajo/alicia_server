@@ -406,13 +406,13 @@ std::vector<data::Uid> RanchDirector::GetOnlineCharacters()
 
 void RanchDirector::HandleClientConnected(ClientId clientId)
 {
-  spdlog::info("Client {} connected to the ranch", clientId);
+  spdlog::info("Client {} connected to the ranch server", clientId);
   _clients.try_emplace(clientId);
 }
 
 void RanchDirector::HandleClientDisconnected(ClientId clientId)
 {
-  spdlog::info("Client {} disconnected from the ranch", clientId);
+  spdlog::info("Client {} disconnected from the ranch server", clientId);
 
   const auto& clientContext = GetClientContext(clientId, false);
   if (clientContext.isAuthenticated)

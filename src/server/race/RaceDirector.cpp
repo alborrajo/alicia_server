@@ -558,7 +558,7 @@ void RaceDirector::HandleClientConnected(ClientId clientId)
 {
   _clients.try_emplace(clientId);
 
-  spdlog::info("Client {} connected to the race", clientId);
+  spdlog::info("Client {} connected to the race server", clientId);
 }
 
 void RaceDirector::HandleClientDisconnected(ClientId clientId)
@@ -573,7 +573,7 @@ void RaceDirector::HandleClientDisconnected(ClientId clientId)
     }
   }
 
-  spdlog::info("Client {} disconnected from the race", clientId);
+  spdlog::info("Client {} disconnected from the race server", clientId);
   _clients.erase(clientId);
 }
 
