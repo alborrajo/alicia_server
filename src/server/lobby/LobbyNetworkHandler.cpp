@@ -600,9 +600,6 @@ void LobbyNetworkHandler::SendLoginOK(ClientId clientId)
   protocol::LobbyCommandLoginOK response{
     .lobbyTime = util::TimePointToFileTime(util::Clock::now()),
     // .member0 = 0xCA794,
-    .motd = std::format(
-      "Welcome to Story of Alicia. Players online: {}",
-      _serverInstance.GetLobbyDirector().GetUsers().size()),
     .val1 = 0x0,
     .val3 = 0x0,
 
@@ -817,6 +814,23 @@ void LobbyNetworkHandler::SendLoginOK(ClientId clientId)
 
       protocol::BuildProtocolHorse(response.horse, horse);
     });
+
+  constexpr std::string_view PlayersOnlinePlaceholder = "{players_online}";
+
+  std::string notice = _serverInstance.GetSettings().general.notice;
+  if (const auto placeholder = notice.find(PlayersOnlinePlaceholder); placeholder != std::string::npos)
+  {
+    notice = notice.replace(
+      placeholder,
+      PlayersOnlinePlaceholder.length(),
+      std::format(
+        "{}", _serverInstance.GetLobbyDirector().GetUsers().size()));
+  }
+
+  if (!notice.empty())
+  {
+    response.notice = notice;
+  }
 
   _commandServer.SetCode(clientId, {});
 

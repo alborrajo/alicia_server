@@ -71,7 +71,7 @@ struct LobbyCommandLoginOK
   //! Max length 16
   std::string name{};
   //! Max length 255
-  std::string motd{};
+  std::string notice{};
   Gender gender{Gender::Unspecified};
   //! Max length 255
   std::string introduction{};
