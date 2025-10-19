@@ -558,7 +558,10 @@ void RaceDirector::HandleClientConnected(ClientId clientId)
 {
   _clients.try_emplace(clientId);
 
-  spdlog::info("Client {} connected to the race server", clientId);
+  spdlog::debug(
+    "Client {} connected to the race server from {}",
+    clientId,
+    _commandServer.GetClientAddress(clientId).to_string());
 }
 
 void RaceDirector::HandleClientDisconnected(ClientId clientId)

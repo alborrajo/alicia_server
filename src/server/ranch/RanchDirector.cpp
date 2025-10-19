@@ -406,7 +406,10 @@ std::vector<data::Uid> RanchDirector::GetOnlineCharacters()
 
 void RanchDirector::HandleClientConnected(ClientId clientId)
 {
-  spdlog::info("Client {} connected to the ranch server", clientId);
+  spdlog::debug(
+    "Client {} connected to the ranch server from {}",
+    clientId,
+    _commandServer.GetClientAddress(clientId).to_string());
   _clients.try_emplace(clientId);
 }
 

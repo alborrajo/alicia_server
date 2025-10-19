@@ -845,7 +845,7 @@ void AcCmdCLCheckWaitingSeqnoOK::Write(
   const AcCmdCLCheckWaitingSeqnoOK& command,
   SinkStream& stream)
 {
-  stream.Write(command.uid)
+  stream.Write(command.time)
     .Write(command.position);
 }
 

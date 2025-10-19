@@ -120,7 +120,7 @@ size_t ChatterServer::OnClientData(
   }
   else
   {
-    spdlog::warn("Unhandled chatter: {}", header.commandId);
+    //spdlog::warn("Unhandled chatter: {}", header.commandId);
   }
 
   return commandStream.GetCursor();

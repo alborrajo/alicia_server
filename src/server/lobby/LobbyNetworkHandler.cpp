@@ -282,12 +282,11 @@ void LobbyNetworkHandler::Terminate()
 }
 
 void LobbyNetworkHandler::AcceptLogin(
-  const std::string& userName,
+  ClientId clientId,
   const bool sendToCharacterCreator)
 {
   try
   {
-    const auto clientId = GetClientIdByUserName(userName, false);
     auto& clientContext = GetClientContext(clientId, false);
 
     clientContext.isAuthenticated = true;
@@ -304,14 +303,14 @@ void LobbyNetworkHandler::AcceptLogin(
 }
 
 void LobbyNetworkHandler::RejectLogin(
-  const std::string& userName,
+  ClientId clientId,
   const protocol::AcCmdCLLoginCancel::Reason reason)
 {
   try
   {
-    const auto clientId = GetClientIdByUserName(userName, false);
+    [[maybe_unused]] auto& clientContext = GetClientContext(clientId, false);
+
     SendLoginCancel(clientId, reason);
-    _commandServer.DisconnectClient(clientId);
   }
   catch (const std::exception&)
   {
@@ -495,25 +494,35 @@ LobbyNetworkHandler::ClientContext& LobbyNetworkHandler::GetClientContext(
 void LobbyNetworkHandler::HandleClientConnected(ClientId clientId)
 {
   _clients.try_emplace(clientId);
-  spdlog::debug("Client {} connected to the lobby server", clientId);
+
+  spdlog::debug(
+    "Client {} connected to the lobby server from {}",
+    clientId,
+    _commandServer.GetClientAddress(clientId).to_string());
+
+  _serverInstance.GetLobbyDirector().GetScheduler().Queue(
+    [this, clientId]()
+    {
+      _serverInstance.GetLobbyDirector().QueueClientConnect(clientId);
+    });
 }
 
 void LobbyNetworkHandler::HandleClientDisconnected(ClientId clientId)
 {
-  try
-  {
     const auto& clientContext = GetClientContext(clientId, false);
+
     _serverInstance.GetLobbyDirector().GetScheduler().Queue(
-      [this, userName = clientContext.userName]()
+      [this, isAuthenticated = clientContext.isAuthenticated, clientId, userName = clientContext.userName]()
       {
-        _serverInstance.GetLobbyDirector().QueueUserLogout(
-          userName);
+        if (isAuthenticated)
+        {
+          _serverInstance.GetLobbyDirector().QueueClientLogout(
+            clientId,
+            userName);
+        }
+
+        _serverInstance.GetLobbyDirector().QueueClientDisconnect(clientId);
       });
-  }
-  catch (const std::exception&)
-  {
-    // We really don't care if the user was not authenticated.
-  }
 
   _clients.erase(clientId);
   spdlog::debug("Client {} disconnected from the lobby server", clientId);
@@ -548,12 +557,15 @@ void LobbyNetworkHandler::HandleLogin(
   clientContext.userName = command.loginId;
 
   _serverInstance.GetLobbyDirector().GetScheduler().Queue(
-  [this, userName = command.loginId, userToken = command.authKey]()
-  {
-    _serverInstance.GetLobbyDirector().QueueUserLogin(
-      userName,
-      userToken);
-  });
+    [this, clientId, userName = command.loginId, userToken = command.authKey]()
+    {
+      const auto queuePosition = _serverInstance.GetLobbyDirector().QueueClientLogin(
+        clientId,
+        userName,
+        userToken);
+
+      SendWaitingSeqno(clientId, queuePosition);
+    });
 }
 
 void LobbyNetworkHandler::SendLoginOK(ClientId clientId)
@@ -1759,9 +1771,29 @@ void LobbyNetworkHandler::HandleGetMessengerInfo(
 
 void LobbyNetworkHandler::HandleCheckWaitingSeqno(
   const ClientId clientId,
-  const protocol::AcCmdCLCheckWaitingSeqno& command)
+  [[maybe_unused]] const protocol::AcCmdCLCheckWaitingSeqno& command)
 {
-  // todo: implement waiting
+  _serverInstance.GetLobbyDirector().GetScheduler().Queue([this, clientId]()
+  {
+    SendWaitingSeqno(
+      clientId,
+      _serverInstance.GetLobbyDirector().GetClientQueuePosition(clientId));
+  });
+}
+
+void LobbyNetworkHandler::SendWaitingSeqno(
+  ClientId clientId,
+  size_t queuePosition)
+{
+  protocol::AcCmdCLCheckWaitingSeqnoOK response{
+    .position = static_cast<uint32_t>(queuePosition)};
+
+  _commandServer.QueueCommand<decltype(response)>(
+    clientId,
+    [response]()
+    {
+      return response;
+    });
 }
 
 void LobbyNetworkHandler::HandleUpdateSystemContent(

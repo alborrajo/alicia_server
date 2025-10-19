@@ -1280,7 +1280,7 @@ struct AcCmdCLCheckWaitingSeqno
 
 struct AcCmdCLCheckWaitingSeqnoOK
 {
-  uint32_t uid{};
+  uint32_t time{};
   uint32_t position{};
 
   static Command GetCommand()

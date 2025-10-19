@@ -81,6 +81,11 @@ void Client::QueueWrite(WriteSupplier writeSupplier)
   WriteLoop();
 }
 
+asio::ip::address_v4 Client::GetAddress()
+{
+  return _socket.remote_endpoint().address().to_v4();
+}
+
 void Client::WriteLoop() noexcept
 {
   // todo: forgive me for this, its not clean, its not pretty and i'm pretty sure there some side effects
