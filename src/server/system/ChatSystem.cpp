@@ -182,7 +182,7 @@ void ChatSystem::RegisterUserCommands()
         "Official user command reference:",
         " //about - Information about the server",
         " //create - Sends you to the character creator",
-        " //online - Information about players",
+        " //online - Count of players",
         " ",
         "Official admin command reference:",
         " //infraction - Infraction management",
@@ -191,7 +191,6 @@ void ChatSystem::RegisterUserCommands()
         " //promote - Promotes user to Game Master role",
         " //demote - Demotes user to User role",
         " //notice - Sends notice to character",
-        " //users - Overview of users",
         " ",
         "More commands available over at: ",
         " https://bruhvrum.github.io/registertest/commands"};
@@ -222,34 +221,12 @@ void ChatSystem::RegisterUserCommands()
       std::vector<std::string> response;
 
       const auto& userInstances = _serverInstance.GetLobbyDirector().GetUsers();
+      const auto userCount = userInstances.size();
 
       response.emplace_back() = std::format(
-        "Online ({}):",
-        userInstances.size());
-
-      for (const auto& userInstance : userInstances | std::views::values)
-      {
-        const auto userRecord = _serverInstance.GetDataDirector().GetUser(
-          userInstance.userName);
-        if (userRecord)
-        {
-          auto onlineCharacterUid{data::InvalidUid};
-          userRecord.Immutable([&onlineCharacterUid](const data::User& user)
-          {
-            onlineCharacterUid = user.characterUid();
-          });
-
-          const auto characterRecord = _serverInstance.GetDataDirector().GetCharacter(
-            onlineCharacterUid);
-          if (characterRecord)
-          {
-            characterRecord.Immutable([&response](const data::Character& character)
-            {
-              response.emplace_back(std::format(" {}", character.name()));
-            });
-          }
-        }
-      }
+        "There's {} {} online.",
+        userCount > 1 ? "players" : "player",
+        userCount);
 
       return response;
     });
