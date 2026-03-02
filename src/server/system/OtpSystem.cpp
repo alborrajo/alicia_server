@@ -9,6 +9,7 @@ namespace server
 
 uint32_t OtpSystem::GrantCode(const size_t key)
 {
+  std::scoped_lock lock(_codesMutex);
   const auto [iter, inserted] = _codes.insert_or_assign(
     key,
     Code{
@@ -20,6 +21,8 @@ uint32_t OtpSystem::GrantCode(const size_t key)
 
 bool OtpSystem::AuthorizeCode(const size_t key, const uint32_t code)
 {
+  std::scoped_lock lock(_codesMutex);
+
   const auto codeIter = _codes.find(key);
   if (codeIter == _codes.cend())
     return false;

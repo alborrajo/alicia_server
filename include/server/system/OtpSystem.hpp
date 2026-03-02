@@ -7,6 +7,7 @@
 
 #include <chrono>
 #include <random>
+#include <mutex>
 #include <unordered_map>
 
 namespace server
@@ -25,6 +26,7 @@ private:
     uint32_t code{};
   };
 
+  std::mutex _codesMutex;
   std::random_device _rd;
   std::unordered_map<size_t, Code> _codes;
 };
