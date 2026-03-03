@@ -1919,7 +1919,7 @@ void AcCmdRCTimeoutCareUser::Write(
   const AcCmdRCTimeoutCareUser& command,
   SinkStream& stream)
 {
-  stream.Write(command.unk0);
+  stream.Write(command.characterUid);
 }
 
 void AcCmdRCTimeoutCareUser::Read(
