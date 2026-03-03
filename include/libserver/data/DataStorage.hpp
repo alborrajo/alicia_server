@@ -109,6 +109,8 @@ public:
     entry.value = std::move(data);
     entry.available = true;
 
+    RequestStore(key);
+
     return Record(&entry.value, &entry.mutex, [this, key]()
       {
         RequestStore(key);
@@ -128,6 +130,8 @@ public:
     auto& entry = it->second;
     entry.value = std::move(data);
     entry.available = true;
+
+    RequestStore(key);
 
     return Record(&entry.value, &entry.mutex, [this, key]()
       {
