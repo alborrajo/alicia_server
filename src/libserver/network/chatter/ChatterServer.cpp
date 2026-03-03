@@ -73,18 +73,18 @@ void ChatterServer::BeginHost(network::asio::ip::address_v4 address, uint16_t po
         spdlog::error("[Stack] {}({}): {}", entry.source_file(), entry.source_line(), entry.description());
       }
 
-      EndHost();
+      _server.End();
     }
   });
 }
 
 void ChatterServer::EndHost()
 {
-  if (_serverThread.joinable())
-  {
-    _server.End();
-    _serverThread.join();
-  }
+  if (not _serverThread.joinable())
+    return;
+
+  _server.End();
+  _serverThread.join();
 }
 
 void ChatterServer::HandleNetworkTick()

@@ -131,7 +131,7 @@ public:
     const asio::ip::address& address,
     uint16_t port);
 
-  //! Ends the server thread.
+  //! Ends the server.
   void End();
 
   //! Get client.

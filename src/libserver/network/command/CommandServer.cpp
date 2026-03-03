@@ -139,7 +139,7 @@ void CommandServer::BeginHost(const asio::ip::address& address, uint16_t port)
           spdlog::error("[Stack] {}({}): {}", entry.source_file(), entry.source_line(), entry.description());
         }
 
-        EndHost();
+        _server.End();
       }
     });
 }

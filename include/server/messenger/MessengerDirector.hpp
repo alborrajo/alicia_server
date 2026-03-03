@@ -60,8 +60,6 @@ public:
   void Tick();
 
 private:
-  
-
   void HandleClientConnected(network::ClientId clientId) override;
   void HandleClientDisconnected(network::ClientId clientId) override;
 

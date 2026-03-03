@@ -1421,6 +1421,10 @@ void MessengerDirector::HandleChatterUpdateState(
   network::ClientId clientId,
   const protocol::ChatCmdUpdateState& command)
 {
+  auto& clientContext = GetClientContext(clientId, false);
+  if (not clientContext.isAuthenticated)
+    return;
+
   std::string status =
     command.presence.status == protocol::Status::Hidden ? "Hidden" :
     command.presence.status == protocol::Status::Offline ? "Offline" :
@@ -1456,7 +1460,6 @@ void MessengerDirector::HandleChatterUpdateState(
     return;
   }
 
-  auto& clientContext = GetClientContext(clientId);
   // Update state for client context
   clientContext.presence = command.presence;
 
