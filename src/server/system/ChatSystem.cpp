@@ -225,8 +225,8 @@ void ChatSystem::RegisterUserCommands()
 
       response.emplace_back() = std::format(
         "There's {} {} online.",
-        userCount > 1 ? "players" : "player",
-        userCount);
+        userCount,
+        userCount > 1 ? "players" : "player");
 
       return response;
     });
