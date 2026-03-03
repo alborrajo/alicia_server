@@ -3436,15 +3436,15 @@ void RaceDirector::HandleTeamGauge(const ClientId clientId)
     redTeam.boostCount = 0;
     blueTeam.boostCount = 0;
 
-    // Lock the beaten team's gauge so it cannot fill during the spur.
-    auto& beatenTeamInfo =
-      racer.team == tracker::RaceTracker::Racer::Team::Red ? blueTeam :
-      racer.team == tracker::RaceTracker::Racer::Team::Blue ? redTeam :
+    // Lock the spurring team's gauge so it cannot fill during the spur.
+    auto& spurringTeamInfo =
+      racer.team == tracker::RaceTracker::Racer::Team::Red ? redTeam :
+      racer.team == tracker::RaceTracker::Racer::Team::Blue ? blueTeam :
       throw std::runtime_error(
         std::format(
           "Unrecognised racer team '{}'",
           static_cast<uint32_t>(racer.team)));
-    beatenTeamInfo.gaugeLocked = true;
+    spurringTeamInfo.gaugeLocked = true;
 
     // TODO: put this into the config somewhere
     // When to begin the spur/reset event.
@@ -3452,7 +3452,7 @@ void RaceDirector::HandleTeamGauge(const ClientId clientId)
     constexpr auto SpurStartDelay = std::chrono::milliseconds(1500);
 
     _scheduler.Queue(
-      [this, &raceInstance, &racer, &beatenTeamInfo, maxPoints, teamSize]()
+      [this, &raceInstance, &racer, &spurringTeamInfo, maxPoints, teamSize]()
       {
         const float BaseLoseTeamSpurConsumeRate = -10.0f;
         const float BaseWinTeamSpurConsumeRate = -2.5f;
@@ -3487,11 +3487,11 @@ void RaceDirector::HandleTeamGauge(const ClientId clientId)
         const float spurDurationSeconds =
           (maxPoints / 10.0f) / (std::abs(BaseWinTeamSpurConsumeRate) * teamSize);
 
-        // Schedule unlock of the beaten team's gauge after the spur completes.
+        // Schedule unlock of the spurring team's gauge after the spur completes.
         _scheduler.Queue(
-          [&beatenTeamInfo]()
+          [&spurringTeamInfo]()
           {
-            beatenTeamInfo.gaugeLocked = false;
+            spurringTeamInfo.gaugeLocked = false;
           },
           Scheduler::Clock::now() + std::chrono::milliseconds(
             static_cast<int64_t>(spurDurationSeconds * 1000)));
