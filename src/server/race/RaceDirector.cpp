@@ -3357,11 +3357,11 @@ void RaceDirector::HandleTeamGauge(const ClientId clientId)
   // Use the max of the two team sizes to handle potentially unbalanced teams.
   uint32_t redTeamCount = 0;
   uint32_t blueTeamCount = 0;
-  for (const auto& racer : raceInstance.tracker.GetRacers() | std::views::values)
+  for (const auto& _ : raceInstance.tracker.GetRacers() | std::views::values)
   {
-    if (racer.team == tracker::RaceTracker::Racer::Team::Red)
+    if (_.team == tracker::RaceTracker::Racer::Team::Red)
       ++redTeamCount;
-    else if (racer.team == tracker::RaceTracker::Racer::Team::Blue)
+    else if (_.team == tracker::RaceTracker::Racer::Team::Blue)
       ++blueTeamCount;
   }
   const auto teamSize = std::max(redTeamCount, blueTeamCount);
