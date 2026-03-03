@@ -2539,6 +2539,33 @@ struct AcCmdCRKickNotify
     SourceStream& stream);
 };
 
+//! Server-initiated, clientbound race waiting room command.
+//! "When {characterName} crosses the finish line, everyone gets a carrot bonus."
+struct AcCmdRCTimeoutCareUser
+{
+  //! UID of the pitied character. 
+  uint32_t characterUid{};
+
+  static Command GetCommand()
+  {
+    return Command::AcCmdRCTimeoutCareUser;
+  }
+
+  //! Writes the command to a provided sink stream.
+  //! @param command Command.
+  //! @param stream Sink stream.
+  static void Write(
+    const AcCmdRCTimeoutCareUser& command,
+    SinkStream& stream);
+
+  //! Reader a command from a provided source stream.
+  //! @param command Command.
+  //! @param stream Source stream.
+  static void Read(
+    AcCmdRCTimeoutCareUser& command,
+    SourceStream& stream);
+};
+
 } // namespace server::protocol
 
 #endif // RACE_MESSAGE_DEFINES_HPP

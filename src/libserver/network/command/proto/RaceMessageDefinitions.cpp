@@ -1915,4 +1915,18 @@ void AcCmdCRKickNotify::Read(
   throw std::runtime_error("Not implemented");
 }
 
+void AcCmdRCTimeoutCareUser::Write(
+  const AcCmdRCTimeoutCareUser& command,
+  SinkStream& stream)
+{
+  stream.Write(command.unk0);
+}
+
+void AcCmdRCTimeoutCareUser::Read(
+  AcCmdRCTimeoutCareUser&,
+  SourceStream&)
+{
+  throw std::runtime_error("Not implemented");
+}
+
 } // namespace server::protocol
