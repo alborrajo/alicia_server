@@ -90,3 +90,7 @@ words:
       prevent: true
     - word: '\bs+e+x+y+\b'
       prevent: true
+    - word: '\bt+w+a+t+\b'
+      prevent: true
+    - word: '\bl+o+l+i+\b'
+      prevent: true
