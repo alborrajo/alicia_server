@@ -30,21 +30,15 @@ By default, the game uses ports `10030`-`10033`. The default configuration of th
 
 On the server there is two categories of configurations, one for the general server settings and one for the game settings, located at `./config/server` and `./config/game` respectively.
 
-### Registering users (DATASOURCE FOR PROTOTYPE ONLY)
-To add users to your server, open the data directory and create a **JSON** file for each user you want to register. Name of the file should be the username they'll use to log in. 
+#### Authentication
 
-Example of a user file (`rgnter.json`):
-
-```json5
-// Filename: rgnter.json
-{"name": "rgnter", "token": "myamazingpassword", "characterUid": 0, "infractions": []}
-```
+The server requires an authentication service to authenticate user credentials. Currently, the server supports `local` and `postgres` backends. Local does no verification at all, while Postgres uses a table in a specified database. Todo documentation. Ask in Studio server. 
 
 ## Client
 ### Client
-[You can download the production game version installer from here]([https://drive.proton.me/urls/XX1GHBQGEW#WXILQk8JS08f](https://drive.proton.me/urls/37WM215Q1R#NlzxAZSg7VFC))([gdrive mirror](https://drive.google.com/file/d/1FMt4C1AmpP_8_1aItuYphvxWec9o2w6N/view)). Game contains some required patches (see Patches section).
+[You can download the production game version installer from here](https://drive.proton.me/urls/37WM215Q1R#NlzxAZSg7VFC) ([gdrive mirror](https://drive.google.com/file/d/1NMh_Y8UsTB4HgfR5qVP81ko-ukKSA_00/view)). Game contains some required patches (see Patches section).
 
-The installator contains launcher and the game itself. The default installation directory is `%appdata%/Story of Alicia`. 
+The installation contains launcher and the game itself. The default installation directory is `%appdata%/Story of Alicia`. 
 
 ### Game configuration
 There's three available game configurations in the production version:
@@ -72,7 +66,9 @@ Open terminal in the game folder and run the following command:
 ```bash
 ./Alicia.exe -GameID 2 -ID [username] -OP [password]
 ```
-### Patches
+
+### `Patches`
 - Disable hackshield
+- 
 - Disable RcScrTxt localization limitations
 - Allow character creator in every login mode
