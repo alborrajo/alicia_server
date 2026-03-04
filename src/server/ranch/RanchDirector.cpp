@@ -2958,7 +2958,7 @@ void RanchDirector::HandleRequestPetBirth(
     });
 
   // Determine which item to create based on whether pet already exists
-  constexpr data::Tid PityItemTid = 46019;
+  constexpr data::Tid PityItemTid = 46018;
   const data::Tid itemTidToCreate = petAlreadyExists ? PityItemTid : petItemTid;
 
   auto createdItemUid = data::InvalidUid;
