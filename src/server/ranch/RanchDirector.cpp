@@ -2750,8 +2750,7 @@ void RanchDirector::HandleBoostIncubateEgg(
     clientContext.characterUid);
 
   protocol::AcCmdCRBoostIncubateEggOK response{
-    .incubatorSlot = command.incubatorSlot
-  };
+    .incubatorSlot = command.incubatorSlot};
 
   characterRecord.Mutable(
     [this, &command, &response](data::Character& character)
@@ -2762,13 +2761,22 @@ void RanchDirector::HandleBoostIncubateEgg(
       if (not itemRecord)
         throw std::runtime_error("Item not found");
       
-      itemRecord->Immutable([&command, &response](const data::Item& item)
+      // Populate response with item metadata
+      itemRecord->Immutable([this, &response](const data::Item& item)
       {
         response.item = {
           .uid = item.uid(),
-          .tid = item.tid(),
-          .count = item.count()};
+          .tid = item.tid()};
       });
+
+      // Consume (1) item
+      const auto& consumeVerdict = GetServerInstance().GetItemSystem().ConsumeItem(
+        character,
+        response.item.tid,
+        1);
+
+      // TODO: check if item is or can be consumed, response with `AcCmdCRBoostIncubateEggCancel`
+      response.item.count = consumeVerdict.remainingItemCount;
 
       // Find the Egg record through the incubater slot.
       const auto eggRecord = GetServerInstance().GetDataDirector().GetEggCache().Get(
@@ -2778,7 +2786,6 @@ void RanchDirector::HandleBoostIncubateEgg(
 
       for (const auto& egg : *eggRecord)
       {
-
         egg.Mutable([this, &command, &response](data::Egg& eggData)
           {
             if (eggData.incubatorSlot() == command.incubatorSlot)
