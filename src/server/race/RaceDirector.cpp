@@ -303,6 +303,12 @@ RaceDirector::RaceDirector(ServerInstance& serverInstance)
     {
       HandleKickUser(clientId, message);
     });
+
+  _commandServer.RegisterCommandHandler<protocol::AcCmdCRTriggerizeAct>(
+    [this](ClientId clientId, const auto& message)
+    {
+      HandleTriggerizeAct(clientId, message);
+    });
 }
 
 void RaceDirector::Initialize()
@@ -3535,6 +3541,63 @@ void RaceDirector::HandleTeamGauge(const ClientId clientId)
   for (const auto& raceClientId : raceInstance.clients)
   {
     _commandServer.QueueCommand<decltype(spur)>(raceClientId, [spur](){ return spur; });
+  }
+}
+
+void RaceDirector::HandleTriggerizeAct(
+  ClientId clientId,
+  const protocol::AcCmdCRTriggerizeAct& command)
+{
+  const auto& clientContext = GetClientContext(clientId);
+  auto& raceInstance = _raceInstances[clientContext.roomUid];
+
+  spdlog::debug("AcCmdCRTriggerizeAct: {} {} {}",
+    command.unk0,
+    command.unk1,
+    command.unk2);
+
+  // TODO: experimenting with something, remove this
+  raceInstance.tracker.RemoveRacer(clientContext.characterUid);
+  try
+  {
+    const auto& racer = raceInstance.tracker.GetRacer(clientContext.characterUid);
+    bool isSpeedGameMode = raceInstance.raceGameMode == protocol::GameMode::Speed;
+    // TODO: check if the racer is in adv map race `bool isAdvMap = raceInstance.raceMapBlockId == ???`
+    bool isAdvMap = true;
+    // The racer is neither in a speed mode or adv map
+    if (not isSpeedGameMode or not isAdvMap)
+    {
+      spdlog::warn("Character '{}' tried to trigger an interactive object but is not in a speed adv map race.",
+        clientContext.characterUid);
+      return;
+    }
+  }
+  catch (std::runtime_error ex)
+  {
+    spdlog::warn("Error getting character '{}''s racer when triggering an interactive object: {}",
+      clientContext.characterUid,
+      ex.what());
+    return;
+  }
+
+  // TODO: check if the object ID is within range
+  // TODO: check if the event ID is valid
+
+  protocol::AcCmdCRTriggerizeAct response{
+    .unk0 = 1, // Setting this to either 1 or 2 satisfies the conditional in the handler
+    .unk1 = command.unk1,
+    .unk2 = command.unk2};
+
+  {
+    std::scoped_lock lock(raceInstance.clientsMutex);
+    for (const auto& raceClientId : raceInstance.clients)
+    {
+      // Do not broadcast to self
+      if (raceClientId == clientId)
+        continue;
+
+      _commandServer.QueueCommand<decltype(response)>(raceClientId, [response](){ return response; });
+    }
   }
 }
 
