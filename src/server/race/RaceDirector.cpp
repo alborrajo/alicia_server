@@ -728,6 +728,41 @@ RaceDirector::ClientContext& RaceDirector::GetClientContextByCharacterUid(
   throw std::runtime_error("Character not associated with any client");
 }
 
+RaceDirector::RaceInstance& RaceDirector::GetRaceInstance(
+  const RaceDirector::ClientContext clientContext,
+  const bool checkRacer)
+{
+  // Check if the client has an invalid room UID
+  if (clientContext.roomUid == data::InvalidUid)
+    throw std::runtime_error(
+      std::format("Tried to get race instance for character '{}' but room uid is invalid",
+        clientContext.characterUid));
+
+  // Sanity check if a race instance by that room UID exists
+  if (not _raceInstances.contains(clientContext.roomUid))
+    throw std::runtime_error(
+      std::format("Tried to get race instance for character '{}' but room '{}' does not exist",
+        clientContext.characterUid,
+        clientContext.roomUid));
+
+  auto& raceInstance = _raceInstances[clientContext.roomUid];
+  
+  // If not racing command then we are done here
+  // HurdleClearResult, HandleSpur etc.
+  if (not checkRacer)
+    return raceInstance;
+
+  // Check if the character is a racer
+  // Protects against characters waiting in the waiting room but emitting racing commands
+  if (not raceInstance.tracker.IsRacer(clientContext.characterUid))
+    throw std::runtime_error(
+      std::format("Tried to get race instance '{}' but character '{}' is not a racer",
+        clientContext.roomUid,
+        clientContext.characterUid));
+
+  return raceInstance;
+}
+
 void RaceDirector::HandleEnterRoom(
   ClientId clientId,
   const protocol::AcCmdCREnterRoom& command)
@@ -3549,34 +3584,17 @@ void RaceDirector::HandleTriggerizeAct(
   const protocol::AcCmdCRTriggerizeAct& command)
 {
   const auto& clientContext = GetClientContext(clientId);
-  auto& raceInstance = _raceInstances[clientContext.roomUid];
+  auto& raceInstance = GetRaceInstance(clientContext);
 
-  spdlog::debug("AcCmdCRTriggerizeAct: {} {} {}",
-    command.unk0,
-    command.unk1,
-    command.unk2);
+  const bool isSpeedGameMode = raceInstance.raceGameMode == protocol::GameMode::Speed;
+  const auto& mapBlockInfo = _serverInstance.GetCourseRegistry().GetMapBlockInfo(raceInstance.raceMapBlockId);
+  const bool isAdvMap = mapBlockInfo.requiredLevel >= 12;
 
-  // TODO: experimenting with something, remove this
-  raceInstance.tracker.RemoveRacer(clientContext.characterUid);
-  try
+  // The racer is neither in a speed mode or adv map
+  if (not isSpeedGameMode or not isAdvMap)
   {
-    const auto& racer = raceInstance.tracker.GetRacer(clientContext.characterUid);
-    bool isSpeedGameMode = raceInstance.raceGameMode == protocol::GameMode::Speed;
-    // TODO: check if the racer is in adv map race `bool isAdvMap = raceInstance.raceMapBlockId == ???`
-    bool isAdvMap = true;
-    // The racer is neither in a speed mode or adv map
-    if (not isSpeedGameMode or not isAdvMap)
-    {
-      spdlog::warn("Character '{}' tried to trigger an interactive object but is not in a speed adv map race.",
-        clientContext.characterUid);
-      return;
-    }
-  }
-  catch (std::runtime_error ex)
-  {
-    spdlog::warn("Error getting character '{}''s racer when triggering an interactive object: {}",
-      clientContext.characterUid,
-      ex.what());
+    spdlog::warn("Character '{}' tried to trigger an interactive object but is not in a speed adv map race.",
+      clientContext.characterUid);
     return;
   }
 
