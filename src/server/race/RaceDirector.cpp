@@ -3611,7 +3611,7 @@ void RaceDirector::HandleTriggerizeAct(
 
   const bool isSpeedGameMode = raceInstance.raceGameMode == protocol::GameMode::Speed;
   const auto& mapBlockInfo = _serverInstance.GetCourseRegistry().GetMapBlockInfo(raceInstance.raceMapBlockId);
-  const bool isAdvMap = mapBlockInfo.requiredLevel >= 12;
+  const bool isAdvMap = mapBlockInfo.trainingFee > 0;
 
   // The racer is neither in a speed mode or adv map
   if (not isSpeedGameMode or not isAdvMap)
