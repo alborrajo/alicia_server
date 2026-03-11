@@ -3285,7 +3285,7 @@ void RaceDirector::HandleKickUser(
   const protocol::AcCmdCRKick& command)
 {
   const auto& clientContext = GetClientContext(clientId);
-  auto& raceInstance = GetRaceInstance(clientContext);
+  auto& raceInstance = GetRaceInstance(clientContext, false);
 
   // Only the room master may kick players.
   if (clientContext.characterUid != raceInstance.masterUid)
