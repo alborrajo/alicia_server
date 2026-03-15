@@ -41,6 +41,7 @@ elseif(APPLE)
     find_package(ICU COMPONENTS uc i18n REQUIRED)
     target_link_libraries(platform-properties INTERFACE
             ICU::uc ICU::i18n)
+    target_compile_definitions(platform-properties INTERFACE DISABLE_STACKTRACE)
 else()
     target_link_libraries(platform-properties INTERFACE
             icuuc icui18n)
